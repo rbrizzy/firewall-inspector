@@ -1,3 +1,9 @@
+> **⚠️ ARCHIVED / SUPERSEDED.** This is the specification for an earlier,
+> abandoned "Packet Quest" network-routing game — **not** the game in this repo.
+> The canonical spec for **Firewall Inspector** is
+> [`specs/001-firewall-inspector/spec.md`](../../specs/001-firewall-inspector/spec.md).
+> This file is kept for historical context only.
+
 # Spec — Packet Quest: a network routing adventure
 
 ## What I want to build
