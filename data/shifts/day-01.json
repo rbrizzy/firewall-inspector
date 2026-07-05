@@ -1,0 +1,111 @@
+{
+  "id": "day-01",
+  "index": 1,
+  "briefing": {
+    "title": "Day 1 — Blocking legacy ports",
+    "body": "Welcome to the inspection desk. Today you enforce two simple rules: deny inbound Telnet (TCP port 23) and inbound SMB (TCP port 445) from the outside — both are risky legacy services. Everything else is allowed by default. Read each packet's protocol and destination port, then stamp ALLOW or DENY.",
+    "examples": [
+      { "verdict": "DENY", "why": "TCP to destination port 23 is Telnet — denied." },
+      { "verdict": "ALLOW", "why": "TCP to port 443 (HTTPS) matches no deny rule — allowed by default." }
+    ],
+    "introducesConcepts": ["protocol-rule", "dstPort-rule"]
+  },
+  "ruleset": {
+    "defaultVerdict": "ALLOW",
+    "rules": [
+      {
+        "id": "r-block-telnet",
+        "description": "Deny inbound Telnet (TCP/23) — cleartext legacy protocol.",
+        "priority": 100,
+        "match": { "protocol": "TCP", "dstPort": 23 },
+        "verdict": "DENY",
+        "isException": false,
+        "source": { "kind": "RFC", "ref": "RFC 854 (Telnet)", "shownToPlayer": true }
+      },
+      {
+        "id": "r-block-smb",
+        "description": "Deny inbound SMB (TCP/445) from the internet.",
+        "priority": 100,
+        "match": { "protocol": "TCP", "dstPort": 445 },
+        "verdict": "DENY",
+        "isException": false,
+        "source": null
+      }
+    ]
+  },
+  "clockSeconds": null,
+  "passThreshold": { "minAccuracy": 0.7, "maxSecurityIncidents": 2, "minMorale": 50 },
+  "queue": [
+    {
+      "id": "d01-p01", "srcAddress": "198.51.100.10", "dstAddress": "10.0.0.5",
+      "srcPort": 51500, "dstPort": 443, "protocol": "TCP", "flags": ["SYN"],
+      "payloadIndicators": [ { "label": "Service", "value": "HTTPS", "signatureId": null } ],
+      "rawPayload": null, "techniques": [], "groundTruth": "benign",
+      "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null
+    },
+    {
+      "id": "d01-p02", "srcAddress": "203.0.113.20", "dstAddress": "10.0.0.5",
+      "srcPort": 40222, "dstPort": 23, "protocol": "TCP", "flags": ["SYN"],
+      "payloadIndicators": [ { "label": "Service", "value": "Telnet", "signatureId": null } ],
+      "rawPayload": null, "techniques": [], "groundTruth": "policy-violating",
+      "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null
+    },
+    {
+      "id": "d01-p03", "srcAddress": "192.0.2.44", "dstAddress": "10.0.0.9",
+      "srcPort": 39001, "dstPort": 445, "protocol": "TCP", "flags": ["SYN"],
+      "payloadIndicators": [ { "label": "Service", "value": "SMB", "signatureId": null } ],
+      "rawPayload": null, "techniques": [], "groundTruth": "policy-violating",
+      "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null
+    },
+    {
+      "id": "d01-p04", "srcAddress": "198.51.100.77", "dstAddress": "10.0.0.53",
+      "srcPort": 33333, "dstPort": 53, "protocol": "UDP", "flags": [],
+      "payloadIndicators": [ { "label": "Service", "value": "DNS query", "signatureId": null } ],
+      "rawPayload": null, "techniques": [], "groundTruth": "benign",
+      "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null
+    },
+    {
+      "id": "d01-p05", "srcAddress": "203.0.113.101", "dstAddress": "10.0.0.5",
+      "srcPort": 44100, "dstPort": 443, "protocol": "TCP", "flags": ["SYN", "ACK"],
+      "payloadIndicators": [ { "label": "Service", "value": "HTTPS (partner API)", "signatureId": null } ],
+      "rawPayload": null, "techniques": [], "groundTruth": "benign",
+      "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null
+    },
+    {
+      "id": "d01-p06", "srcAddress": "192.0.2.88", "dstAddress": "10.0.0.12",
+      "srcPort": 51888, "dstPort": 23, "protocol": "TCP", "flags": ["SYN"],
+      "payloadIndicators": [ { "label": "Service", "value": "Telnet", "signatureId": null } ],
+      "rawPayload": null, "techniques": [], "groundTruth": "policy-violating",
+      "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null
+    },
+    {
+      "id": "d01-p07", "srcAddress": "198.51.100.150", "dstAddress": "10.0.0.22",
+      "srcPort": 52001, "dstPort": 22, "protocol": "TCP", "flags": ["SYN"],
+      "payloadIndicators": [ { "label": "Service", "value": "SSH", "signatureId": null } ],
+      "rawPayload": null, "techniques": [], "groundTruth": "benign",
+      "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null
+    },
+    {
+      "id": "d01-p08", "srcAddress": "203.0.113.5", "dstAddress": "10.0.0.9",
+      "srcPort": 40555, "dstPort": 445, "protocol": "TCP", "flags": ["SYN"],
+      "payloadIndicators": [ { "label": "Service", "value": "SMB", "signatureId": null } ],
+      "rawPayload": null, "techniques": [], "groundTruth": "policy-violating",
+      "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null
+    },
+    {
+      "id": "d01-p09", "srcAddress": "198.51.100.201", "dstAddress": "10.0.0.80",
+      "srcPort": 33987, "dstPort": 80, "protocol": "TCP", "flags": ["SYN"],
+      "payloadIndicators": [ { "label": "Service", "value": "HTTP", "signatureId": null } ],
+      "rawPayload": null, "techniques": [], "groundTruth": "benign",
+      "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null
+    },
+    {
+      "id": "d01-p10", "srcAddress": "192.0.2.211", "dstAddress": "10.0.0.5",
+      "srcPort": 41022, "dstPort": 23, "protocol": "TCP", "flags": ["SYN"],
+      "payloadIndicators": [ { "label": "Service", "value": "Telnet", "signatureId": null } ],
+      "rawPayload": null, "techniques": [], "groundTruth": "policy-violating",
+      "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null
+    }
+  ],
+  "introducesConcepts": ["protocol-rule", "dstPort-rule"]
+}

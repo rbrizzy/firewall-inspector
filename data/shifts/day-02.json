@@ -1,0 +1,67 @@
+{
+  "id": "day-02",
+  "index": 2,
+  "briefing": {
+    "title": "Day 2 — Known-bad subnets and exceptions",
+    "body": "Two new ideas today. First, a whole source subnet (203.0.113.0/24) has been flagged as known-bad — deny anything from it. Second, exceptions: we deny the database port (TCP/3306) from the internet, EXCEPT from the finance VPN (10.20.0.0/16), which is allowed. Exceptions have higher priority, so a finance-VPN database packet is ALLOWED even though the general rule denies TCP/3306.",
+    "examples": [
+      { "verdict": "DENY", "why": "Source is in the known-bad subnet 203.0.113.0/24." },
+      { "verdict": "ALLOW", "why": "TCP/3306 from the finance VPN (10.20.0.0/16) — the exception wins." },
+      { "verdict": "DENY", "why": "TCP/3306 from the public internet — no exception applies." }
+    ],
+    "introducesConcepts": ["srcCidr-rule", "exception"]
+  },
+  "ruleset": {
+    "defaultVerdict": "ALLOW",
+    "geoMap": {},
+    "rules": [
+      { "id": "r-block-telnet", "description": "Deny inbound Telnet (TCP/23).", "priority": 100,
+        "match": { "protocol": "TCP", "dstPort": 23 }, "verdict": "DENY", "isException": false,
+        "source": { "kind": "RFC", "ref": "RFC 854 (Telnet)", "shownToPlayer": true } },
+      { "id": "r-block-smb", "description": "Deny inbound SMB (TCP/445).", "priority": 100,
+        "match": { "protocol": "TCP", "dstPort": 445 }, "verdict": "DENY", "isException": false, "source": null },
+      { "id": "r-block-badnet", "description": "Deny all traffic from the known-bad subnet 203.0.113.0/24.", "priority": 90,
+        "match": { "srcCidr": "203.0.113.0/24" }, "verdict": "DENY", "isException": false, "source": null },
+      { "id": "r-block-db", "description": "Deny the database port (TCP/3306) from the internet.", "priority": 80,
+        "match": { "protocol": "TCP", "dstPort": 3306 }, "verdict": "DENY", "isException": false, "source": null },
+      { "id": "r-finance-db-allow", "description": "Exception: allow TCP/3306 from the finance VPN (10.20.0.0/16).", "priority": 180,
+        "match": { "srcCidr": "10.20.0.0/16", "dstPort": 3306 }, "verdict": "ALLOW", "isException": true, "source": null }
+    ]
+  },
+  "clockSeconds": null,
+  "passThreshold": { "minAccuracy": 0.75, "maxSecurityIncidents": 2, "minMorale": 50 },
+  "queue": [
+    { "id": "d02-p01", "srcAddress": "198.51.100.10", "dstAddress": "10.0.0.5", "srcPort": 51500, "dstPort": 443,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "HTTPS", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "benign", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null },
+    { "id": "d02-p02", "srcAddress": "203.0.113.44", "dstAddress": "10.0.0.5", "srcPort": 40222, "dstPort": 443,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "HTTPS", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "malicious", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null },
+    { "id": "d02-p03", "srcAddress": "10.20.5.12", "dstAddress": "10.0.0.30", "srcPort": 52011, "dstPort": 3306,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "MySQL", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "benign", "expectedSource": null, "fragmentGroup": null,
+      "narrative": { "id": "n-finance", "framing": "The finance team is closing the quarter and needs the reporting database over the VPN.", "correctVerdictUnchanged": true }, "source": null },
+    { "id": "d02-p04", "srcAddress": "198.51.100.77", "dstAddress": "10.0.0.30", "srcPort": 33321, "dstPort": 3306,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "MySQL", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "policy-violating", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null },
+    { "id": "d02-p05", "srcAddress": "203.0.113.90", "dstAddress": "10.0.0.9", "srcPort": 41000, "dstPort": 80,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "HTTP", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "malicious", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null },
+    { "id": "d02-p06", "srcAddress": "192.0.2.15", "dstAddress": "10.0.0.9", "srcPort": 39555, "dstPort": 445,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "SMB", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "policy-violating", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null },
+    { "id": "d02-p07", "srcAddress": "198.51.100.140", "dstAddress": "10.0.0.53", "srcPort": 33777, "dstPort": 53,
+      "protocol": "UDP", "flags": [], "payloadIndicators": [{ "label": "Service", "value": "DNS query", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "benign", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null },
+    { "id": "d02-p08", "srcAddress": "10.20.9.4", "dstAddress": "10.0.0.30", "srcPort": 52999, "dstPort": 3306,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "MySQL", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "benign", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null },
+    { "id": "d02-p09", "srcAddress": "192.0.2.201", "dstAddress": "10.0.0.5", "srcPort": 41022, "dstPort": 23,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "Telnet", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "policy-violating", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null },
+    { "id": "d02-p10", "srcAddress": "198.51.100.222", "dstAddress": "10.0.0.80", "srcPort": 34980, "dstPort": 443,
+      "protocol": "TCP", "flags": ["SYN", "ACK"], "payloadIndicators": [{ "label": "Service", "value": "HTTPS (partner)", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "benign", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null }
+  ],
+  "introducesConcepts": ["srcCidr-rule", "exception"]
+}
