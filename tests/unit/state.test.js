@@ -108,6 +108,24 @@ test('failing the threshold offers a retry of the same shift with meters reset',
   assert.equal(g.standing.securityIncidents, 0);
 });
 
+test('a retried shift is not double-counted in the run tally', () => {
+  const g = new GameState({ shifts: fixtureShifts(), storage: fakeStorage() });
+  g.init();
+  g.beginInspecting();
+  g.stampCurrent('DENY');  // wrong
+  g.stampCurrent('ALLOW'); // wrong → fail threshold
+  assert.equal(g.lastScore.outcome, 'retry');
+  g.resolveDebrief();      // retry same shift
+  g.beginInspecting();
+  g.stampCurrent('ALLOW'); // correct
+  g.stampCurrent('DENY');  // correct → advance
+  assert.equal(g.lastScore.outcome, 'advance');
+  // Only the passing attempt contributes to the run tally.
+  assert.equal(g.runTally.shiftsPassed, 1);
+  assert.equal(g.runTally.totalPackets, 2);
+  assert.equal(g.runTally.totalCorrect, 2);
+});
+
 test('clock expiry marks remaining packets MISSED and ends the shift', () => {
   const g = new GameState({ shifts: fixtureShifts(), defaultSettings: { clockEnabled: true }, storage: fakeStorage() });
   g.init();

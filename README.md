@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/splash.svg" alt="Firewall Inspector — read the packet, consult the ruleset, stamp ALLOW or DENY" width="860">
+</p>
+
 # Firewall Inspector
 
 A single-player, browser-based, *Papers, Please*–style teaching game. Packets
@@ -80,6 +84,7 @@ enforced invariants.
 ## Notes
 
 The canonical design lives under `specs/001-firewall-inspector/` (spec, plan,
-data model, contracts, quickstart). The legacy root `PLAN.md`/`SPEC.md` describe
-an earlier "Packet Quest" routing concept and are superseded by this README and
-the `specs/` documents; they are retained only for their tech-stack guidance.
+data model, contracts, quickstart). An earlier "Packet Quest" routing concept has
+been archived under [`docs/legacy/`](docs/legacy/) (`PLAN.md`/`SPEC.md`); it is
+superseded by this README and the `specs/` documents and retained only for its
+tech-stack guidance.

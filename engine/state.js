@@ -220,10 +220,14 @@ export class GameState {
     this.lastScore = scoreShift(this.standing, shift.passThreshold);
     this.phase = PHASES.DEBRIEF;
 
-    // Roll per-shift accuracy into the run tally (for end-of-run summary only).
-    this.runTally.totalCorrect += this.standing.correct;
-    this.runTally.totalPackets += this.standing.total;
-    if (this.lastScore.outcome === 'advance') this.runTally.shiftsPassed += 1;
+    // Roll per-shift accuracy into the run tally (end-of-run summary only), but
+    // ONLY for the advancing attempt — a failed shift that is later retried must
+    // not double-count its packets in the overall accuracy.
+    if (this.lastScore.outcome === 'advance') {
+      this.runTally.shiftsPassed += 1;
+      this.runTally.totalCorrect += this.standing.correct;
+      this.runTally.totalPackets += this.standing.total;
+    }
 
     this.save();
   }

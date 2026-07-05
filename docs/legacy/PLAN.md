@@ -1,3 +1,10 @@
+> **⚠️ ARCHIVED / SUPERSEDED.** This document describes an earlier, abandoned
+> "Packet Quest" network-routing game. It is retained only for the tech-stack and
+> architecture guidance that informed the current project. The canonical design
+> for **Firewall Inspector** lives in [`specs/001-firewall-inspector/`](../../specs/001-firewall-inspector/)
+> (spec, plan, data-model, contracts, quickstart), and the run/authoring guide is
+> the root [`README.md`](../../README.md). Do not treat this file as current.
+
 # Plan — Packet Quest technical implementation
 
 ## Tech stack
