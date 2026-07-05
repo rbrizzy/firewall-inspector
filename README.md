@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/splash.svg" alt="Firewall Inspector — read the packet, consult the ruleset, stamp ALLOW or DENY" width="860">
+</p>
+
 # Firewall Inspector
 
 A single-player, browser-based, *Papers, Please*–style teaching game. Packets
