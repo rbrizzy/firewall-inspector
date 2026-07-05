@@ -7,23 +7,25 @@ Third-party code vendored locally so the game stays **clone-and-play** with no
 ## `three.module.js`
 
 The optional THREE.js visualization layer (`viz/blast-radius.js`) imports THREE
-from here. To keep this repository self-contained and offline-capable, ship the
-real THREE.js ES module build at this path:
+from here. The **real THREE.js r160 ES module** is vendored at this path so the
+repository stays self-contained and offline-capable (no `npm install`, no CDN):
 
 - **Source**: https://unpkg.com/three@0.160.0/build/three.module.js
 - **Version**: r160 (`three@0.160.0`)
-- **License**: MIT (see the THREE.js repository)
+- **License**: MIT (Copyright © 2010–2023 three.js authors)
 
-Download it once and commit it:
+To re-fetch or upgrade it, download and commit the module:
 
 ```sh
 curl -L https://unpkg.com/three@0.160.0/build/three.module.js -o vendor/three.module.js
 ```
 
-### Fallback shim
+### SVG/text fallback
 
-If the real module is not present, this directory ships a **minimal placeholder
-shim** exporting a tiny, no-op subset of the THREE API. The game detects the
-placeholder and uses the accessible SVG/text blast-radius fallback instead — the
-game is always fully playable with the viz layer off (see `research.md` R1/R2a).
-Replace the shim with the real module above to enable the animated WebGL layer.
+The blast-radius layer is always optional. `viz/blast-radius.js` degrades to an
+accessible **static SVG/text** presentation whenever the animated layer cannot or
+should not run — `effectsEnabled: false`, `prefers-reduced-motion`, or WebGL
+being unavailable / failing to initialize. If this file is ever replaced by a
+module that exports `IS_PLACEHOLDER === true`, the viz layer treats it as absent
+and uses that same fallback, so the game is always fully playable with the viz
+layer off (see `research.md` R1/R2a).
