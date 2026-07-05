@@ -32,10 +32,14 @@ export function createKeyRouter() {
     return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
   }
 
+  // Keys that must still fire while a form control is focused (e.g. Escape to
+  // close a screen); typing keys stay with the focused input.
+  const GLOBAL_WHEN_EDITABLE = new Set(['escape']);
+
   function onKeyDown(e) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    if (isEditable(document.activeElement)) return;
     const key = e.key.toLowerCase();
+    if (isEditable(document.activeElement) && !GLOBAL_WHEN_EDITABLE.has(key)) return;
     const binding = bindings.get(key);
     if (binding) {
       e.preventDefault();

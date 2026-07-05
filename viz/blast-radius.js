@@ -36,49 +36,69 @@ function effectsAllowed(opts = {}) {
  * off or THREE is unavailable, renders nothing (no fallback needed for ambiance).
  * @returns {{destroy:Function}}
  */
+// A single, app-lifetime ambient renderer. mountAmbient is called on every
+// gameplay re-render (each packet), so allocating a WebGLRenderer per call would
+// exhaust the browser's WebGL context limit (~16) within a shift. Instead we
+// build ONE renderer, re-parent its canvas on each mount, and pause the animation
+// loop while unmounted. { three, scene, camera, renderer, dots, raf, container }.
+let ambient = null;
+
+function ensureAmbient(three, width) {
+  if (ambient) return ambient;
+  const w = width || 480;
+  const scene = new three.Scene();
+  const camera = new three.PerspectiveCamera(60, w / 160, 0.1, 100);
+  camera.position.z = 6;
+  const renderer = new three.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(w, 160);
+  const dots = [];
+  for (let i = 0; i < 24; i += 1) {
+    const m = new three.Mesh(new three.SphereGeometry(0.06, 8, 8),
+      new three.MeshBasicMaterial({ color: 0x6f96ff }));
+    m.position.set((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 4, 0);
+    scene.add(m); dots.push(m);
+  }
+  ambient = { three, scene, camera, renderer, dots, raf: 0, container: null };
+  return ambient;
+}
+
+function startAmbientLoop() {
+  if (!ambient || ambient.raf) return; // already looping
+  const loop = () => {
+    if (!ambient || !ambient.container) { if (ambient) ambient.raf = 0; return; } // paused while unmounted
+    for (const d of ambient.dots) { d.position.x += 0.01; if (d.position.x > 5) d.position.x = -5; }
+    ambient.renderer.render(ambient.scene, ambient.camera);
+    ambient.raf = requestAnimationFrame(loop);
+  };
+  ambient.raf = requestAnimationFrame(loop);
+}
+
 export function mountAmbient(container, opts = {}) {
   if (!container) return { destroy() {} };
   container.textContent = '';
   if (!effectsAllowed(opts)) return { destroy() {} };
 
-  let raf = 0;
-  let renderer = null;
-  let disposed = false;
+  let cancelled = false;
 
   getThree().then((three) => {
-    if (disposed || !three) return; // placeholder/unavailable → stay silent
+    if (cancelled || !three) return; // placeholder/unavailable → stay silent
     try {
-      const scene = new three.Scene();
-      const camera = new three.PerspectiveCamera(60, 2, 0.1, 100);
-      camera.position.z = 6;
-      renderer = new three.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(container.clientWidth || 480, 160);
-      if (renderer.domElement) {
-        container.classList.add('viz-layer');
-        container.appendChild(renderer.domElement);
-      }
-      const dots = [];
-      for (let i = 0; i < 24; i += 1) {
-        const m = new three.Mesh(new three.SphereGeometry(0.06, 8, 8),
-          new three.MeshBasicMaterial({ color: 0x6f96ff }));
-        m.position.set((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 4, 0);
-        scene.add(m); dots.push(m);
-      }
-      const loop = () => {
-        if (disposed) return;
-        for (const d of dots) { d.position.x += 0.01; if (d.position.x > 5) d.position.x = -5; }
-        renderer.render(scene, camera);
-        raf = requestAnimationFrame(loop);
-      };
-      loop();
+      const a = ensureAmbient(three, container.clientWidth);
+      if (!a.renderer.domElement) return;
+      a.container = container;
+      a.renderer.setSize(container.clientWidth || 480, 160);
+      container.classList.add('viz-layer');
+      container.appendChild(a.renderer.domElement); // re-parent the single canvas
+      startAmbientLoop();
     } catch { /* any WebGL failure → silent, game unaffected */ }
   });
 
   return {
     destroy() {
-      disposed = true;
-      if (raf) cancelAnimationFrame(raf);
-      try { renderer && renderer.dispose && renderer.dispose(); } catch { /* noop */ }
+      cancelled = true;
+      // Detach the shared canvas and pause the loop, but keep the renderer/context
+      // alive for the next mount — do NOT dispose (that would leak a fresh context).
+      if (ambient && ambient.container === container) ambient.container = null;
       container.textContent = '';
     },
   };
