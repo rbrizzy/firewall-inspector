@@ -1,0 +1,73 @@
+{
+  "id": "day-03",
+  "index": 3,
+  "briefing": {
+    "title": "Day 3 — A CVE advisory and geo-blocking",
+    "body": "A security advisory (CVE) requires us to deny inbound RDP (TCP/3389) immediately. We are also geo-blocking a hostile region: any source whose address falls in the flagged region (shown in the deep inspector as region XX) is denied. All earlier rules still apply — check the rulebook for the full, prioritized list.",
+    "examples": [
+      { "verdict": "DENY", "why": "TCP/3389 (RDP) is blocked by the new CVE advisory." },
+      { "verdict": "DENY", "why": "Source resolves to the geo-blocked region XX." }
+    ],
+    "introducesConcepts": ["geo-rule", "cve-advisory"]
+  },
+  "ruleset": {
+    "defaultVerdict": "ALLOW",
+    "geoMap": { "185.220.100.0/24": "XX" },
+    "rules": [
+      { "id": "r-block-telnet", "description": "Deny inbound Telnet (TCP/23).", "priority": 100,
+        "match": { "protocol": "TCP", "dstPort": 23 }, "verdict": "DENY", "isException": false,
+        "source": { "kind": "RFC", "ref": "RFC 854 (Telnet)", "shownToPlayer": true } },
+      { "id": "r-block-smb", "description": "Deny inbound SMB (TCP/445).", "priority": 100,
+        "match": { "protocol": "TCP", "dstPort": 445 }, "verdict": "DENY", "isException": false, "source": null },
+      { "id": "r-block-rdp", "description": "Deny inbound RDP (TCP/3389) per CVE advisory.", "priority": 100,
+        "match": { "protocol": "TCP", "dstPort": 3389 }, "verdict": "DENY", "isException": false,
+        "source": { "kind": "CVE", "ref": "CVE-2019-0708 (BlueKeep, illustrative)", "shownToPlayer": true } },
+      { "id": "r-block-badnet", "description": "Deny all traffic from the known-bad subnet 203.0.113.0/24.", "priority": 90,
+        "match": { "srcCidr": "203.0.113.0/24" }, "verdict": "DENY", "isException": false, "source": null },
+      { "id": "r-block-db", "description": "Deny the database port (TCP/3306) from the internet.", "priority": 80,
+        "match": { "protocol": "TCP", "dstPort": 3306 }, "verdict": "DENY", "isException": false, "source": null },
+      { "id": "r-geo-block", "description": "Deny sources in the geo-blocked region XX.", "priority": 70,
+        "match": { "geo": "XX" }, "verdict": "DENY", "isException": false, "source": null },
+      { "id": "r-finance-db-allow", "description": "Exception: allow TCP/3306 from the finance VPN (10.20.0.0/16).", "priority": 180,
+        "match": { "srcCidr": "10.20.0.0/16", "dstPort": 3306 }, "verdict": "ALLOW", "isException": true, "source": null }
+    ]
+  },
+  "clockSeconds": null,
+  "passThreshold": { "minAccuracy": 0.75, "maxSecurityIncidents": 2, "minMorale": 50 },
+  "queue": [
+    { "id": "d03-p01", "srcAddress": "198.51.100.24", "dstAddress": "10.0.0.5", "srcPort": 51022, "dstPort": 3389,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "RDP", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "policy-violating", "expectedSource": null, "fragmentGroup": null, "narrative": null,
+      "source": { "kind": "CVE", "ref": "CVE-2019-0708 (BlueKeep, illustrative)", "shownToPlayer": false } },
+    { "id": "d03-p02", "srcAddress": "185.220.100.7", "dstAddress": "10.0.0.5", "srcPort": 44100, "dstPort": 443,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "HTTPS", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "malicious", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null },
+    { "id": "d03-p03", "srcAddress": "10.20.5.12", "dstAddress": "10.0.0.30", "srcPort": 52011, "dstPort": 3306,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "MySQL", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "benign", "expectedSource": null, "fragmentGroup": null,
+      "narrative": { "id": "n-ceo", "framing": "The travelling CFO is on the finance VPN and needs the reporting database to sign off payroll tonight.", "correctVerdictUnchanged": true }, "source": null },
+    { "id": "d03-p04", "srcAddress": "198.51.100.60", "dstAddress": "10.0.0.5", "srcPort": 40010, "dstPort": 443,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "HTTPS", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "benign", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null },
+    { "id": "d03-p05", "srcAddress": "185.220.100.99", "dstAddress": "10.0.0.9", "srcPort": 41200, "dstPort": 80,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "HTTP", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "malicious", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null },
+    { "id": "d03-p06", "srcAddress": "192.0.2.31", "dstAddress": "10.0.0.7", "srcPort": 51888, "dstPort": 3389,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "RDP", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "policy-violating", "expectedSource": null, "fragmentGroup": null, "narrative": null,
+      "source": { "kind": "CVE", "ref": "CVE-2019-0708 (BlueKeep, illustrative)", "shownToPlayer": false } },
+    { "id": "d03-p07", "srcAddress": "198.51.100.150", "dstAddress": "10.0.0.22", "srcPort": 52001, "dstPort": 22,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "SSH", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "benign", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null },
+    { "id": "d03-p08", "srcAddress": "203.0.113.202", "dstAddress": "10.0.0.5", "srcPort": 40777, "dstPort": 443,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "HTTPS", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "malicious", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null },
+    { "id": "d03-p09", "srcAddress": "198.51.100.190", "dstAddress": "10.0.0.53", "srcPort": 33777, "dstPort": 53,
+      "protocol": "UDP", "flags": [], "payloadIndicators": [{ "label": "Service", "value": "DNS query", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "benign", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null },
+    { "id": "d03-p10", "srcAddress": "10.20.7.7", "dstAddress": "10.0.0.30", "srcPort": 52777, "dstPort": 3306,
+      "protocol": "TCP", "flags": ["SYN"], "payloadIndicators": [{ "label": "Service", "value": "MySQL", "signatureId": null }],
+      "rawPayload": null, "techniques": [], "groundTruth": "benign", "expectedSource": null, "fragmentGroup": null, "narrative": null, "source": null }
+  ],
+  "introducesConcepts": ["geo-rule", "cve-advisory"]
+}

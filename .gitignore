@@ -1,0 +1,20 @@
+# Node (dev-only tooling; no runtime deps)
+node_modules/
+npm-debug.log*
+*.log
+
+# Env / local
+.env*
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
+
+# Build output (none expected — no build step — but ignore if a tool emits them)
+dist/
+build/
+coverage/

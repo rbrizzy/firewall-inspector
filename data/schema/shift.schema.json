@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://firewall-inspector/schema/shift.schema.json",
+  "title": "Shift",
+  "description": "One day of Firewall Inspector: briefing + ruleset + packet queue. Mirrors data-model.md.",
+  "type": "object",
+  "required": ["id", "index", "ruleset", "queue", "passThreshold", "introducesConcepts"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^day-[0-9]{2}$" },
+    "index": { "type": "integer", "minimum": 1, "maximum": 99 },
+    "briefing": { "$ref": "#/$defs/Briefing" },
+    "ruleset": { "$ref": "#/$defs/Ruleset" },
+    "queue": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Packet" } },
+    "clockSeconds": { "type": ["integer", "null"], "minimum": 0 },
+    "passThreshold": { "$ref": "#/$defs/Threshold" },
+    "introducesConcepts": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "Source": {
+      "type": "object",
+      "required": ["kind", "ref", "shownToPlayer"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["CVE", "RFC", "TECHNIQUE"] },
+        "ref": { "type": "string", "minLength": 1 },
+        "shownToPlayer": { "type": "boolean" }
+      }
+    },
+    "Threshold": {
+      "type": "object",
+      "required": ["minAccuracy", "maxSecurityIncidents", "minMorale"],
+      "additionalProperties": false,
+      "properties": {
+        "minAccuracy": { "type": "number", "minimum": 0, "maximum": 1 },
+        "maxSecurityIncidents": { "type": "integer", "minimum": 0 },
+        "minMorale": { "type": "integer" }
+      }
+    },
+    "Example": {
+      "type": "object",
+      "required": ["verdict", "why"],
+      "additionalProperties": false,
+      "properties": {
+        "packetRef": { "type": "string" },
+        "verdict": { "enum": ["ALLOW", "DENY"] },
+        "why": { "type": "string", "minLength": 1 }
+      }
+    },
+    "Briefing": {
+      "type": "object",
+      "required": ["title", "body", "introducesConcepts"],
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "body": { "type": "string", "minLength": 1 },
+        "examples": { "type": "array", "items": { "$ref": "#/$defs/Example" } },
+        "introducesConcepts": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "MatchCriteria": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "dstPort": { "$ref": "#/$defs/PortCriterion" },
+        "srcPort": { "$ref": "#/$defs/PortCriterion" },
+        "dstCidr": { "type": "string" },
+        "srcCidr": { "type": "string" },
+        "protocol": { "type": "string" },
+        "flags": { "type": "array", "items": { "type": "string" } },
+        "geo": { "type": "string" },
+        "signatureId": { "type": "string" },
+        "technique": { "enum": ["spoofed-source", "fragmented-payload", "disguised-c2"] }
+      }
+    },
+    "PortCriterion": {
+      "oneOf": [
+        { "type": "integer", "minimum": 0, "maximum": 65535 },
+        {
+          "type": "object",
+          "required": ["min", "max"],
+          "additionalProperties": false,
+          "properties": {
+            "min": { "type": "integer", "minimum": 0, "maximum": 65535 },
+            "max": { "type": "integer", "minimum": 0, "maximum": 65535 }
+          }
+        }
+      ]
+    },
+    "Rule": {
+      "type": "object",
+      "required": ["id", "description", "priority", "match", "verdict"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "priority": { "type": "integer" },
+        "match": { "$ref": "#/$defs/MatchCriteria" },
+        "verdict": { "enum": ["ALLOW", "DENY"] },
+        "isException": { "type": "boolean" },
+        "source": { "oneOf": [{ "$ref": "#/$defs/Source" }, { "type": "null" }] }
+      }
+    },
+    "Ruleset": {
+      "type": "object",
+      "required": ["defaultVerdict", "rules"],
+      "additionalProperties": false,
+      "properties": {
+        "defaultVerdict": { "enum": ["ALLOW", "DENY"] },
+        "rules": { "type": "array", "items": { "$ref": "#/$defs/Rule" } },
+        "geoMap": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+    "Indicator": {
+      "type": "object",
+      "required": ["label", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "value": { "type": "string" },
+        "signatureId": { "type": ["string", "null"] }
+      }
+    },
+    "NarrativeEvent": {
+      "type": "object",
+      "required": ["id", "framing", "correctVerdictUnchanged"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "framing": { "type": "string", "minLength": 1 },
+        "correctVerdictUnchanged": { "const": true }
+      }
+    },
+    "Packet": {
+      "type": "object",
+      "required": ["id", "srcAddress", "dstAddress", "srcPort", "dstPort", "protocol", "groundTruth"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "srcAddress": { "type": "string" },
+        "dstAddress": { "type": "string" },
+        "srcPort": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "dstPort": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "protocol": { "type": "string" },
+        "flags": { "type": "array", "items": { "type": "string" } },
+        "payloadIndicators": { "type": "array", "items": { "$ref": "#/$defs/Indicator" } },
+        "rawPayload": { "type": ["string", "null"] },
+        "techniques": {
+          "type": "array",
+          "items": { "enum": ["spoofed-source", "fragmented-payload", "disguised-c2"] }
+        },
+        "groundTruth": { "enum": ["benign", "policy-violating", "malicious"] },
+        "expectedSource": { "type": ["string", "null"] },
+        "fragmentGroup": { "type": ["string", "null"] },
+        "narrative": { "oneOf": [{ "$ref": "#/$defs/NarrativeEvent" }, { "type": "null" }] },
+        "source": { "oneOf": [{ "$ref": "#/$defs/Source" }, { "type": "null" }] }
+      }
+    }
+  }
+}

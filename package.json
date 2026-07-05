@@ -1,0 +1,13 @@
+{
+  "name": "firewall-inspector",
+  "version": "1.0.0",
+  "description": "A Papers, Please-style browser game about inspecting network packets and stamping firewall verdicts. No build step, no runtime dependencies.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/unit/*.test.js tests/content/*.test.js",
+    "serve": "python3 -m http.server 8000"
+  },
+  "keywords": ["game", "firewall", "security", "education", "no-build"],
+  "license": "SEE LICENSE IN LICENSE"
+}
