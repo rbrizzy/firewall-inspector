@@ -8,6 +8,7 @@
 import { esc, announce, focusMain } from '../render/a11y.js';
 import { renderPacketDiagram } from '../render/packet-svg.js';
 import { ruleLabel } from '../engine/feedback.js';
+import { ipInCidr } from '../engine/matchers.js';
 import { mountAmbient } from '../viz/blast-radius.js';
 
 // Per-packet UI state that must survive re-render within a shift.
@@ -44,9 +45,24 @@ function indicatorsMarkup(packet) {
   }).join('')}</ul>`;
 }
 
-/** Deep inspector: spoof cross-check, fragment grouping, signatures (US4, FR-013). */
-function inspectorMarkup(packet) {
+/** Resolve a source IP to its geo region via the ruleset geoMap, or null. */
+function geoRegion(srcIp, geoMap) {
+  if (!geoMap) return null;
+  for (const [cidr, region] of Object.entries(geoMap)) {
+    if (ipInCidr(cidr, srcIp)) return region;
+  }
+  return null;
+}
+
+/** Deep inspector: spoof cross-check, fragment grouping, signatures, geo (US4, FR-013). */
+function inspectorMarkup(packet, shift) {
   const rows = [];
+  const region = geoRegion(packet.srcAddress, shift.ruleset.geoMap);
+  if (region) {
+    rows.push(`<li class="indicator"><span class="label">Source region</span>
+      <span class="value">${esc(region)}</span>
+      <span class="tag tag-warn">resolved via geo lookup — cross-check the rulebook</span></li>`);
+  }
   if (packet.expectedSource) {
     const mismatch = packet.expectedSource !== packet.srcAddress;
     rows.push(`<li class="indicator"><span class="label">Expected source</span>
@@ -137,7 +153,7 @@ export function mountGameplay(root, state, ctx) {
 
         <details class="inspector" id="inspector" ${inspectorOpen ? 'open' : ''}>
           <summary>Deep inspector <span class="muted">(<kbd>I</kbd>)</span></summary>
-          ${inspectorMarkup(packet)}
+          ${inspectorMarkup(packet, shift)}
         </details>
 
         <details class="inspector" id="rawview" ${rawOpen ? 'open' : ''}>
